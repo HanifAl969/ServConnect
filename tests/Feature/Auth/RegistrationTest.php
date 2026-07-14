@@ -12,8 +12,11 @@ test('new users can register', function () {
         'email' => 'test@example.com',
         'password' => 'password',
         'password_confirmation' => 'password',
+        'role' => 'user',
+        'ktp_photo' => Illuminate\Http\UploadedFile::fake()->image('ktp.jpg'),
     ]);
 
-    $this->assertAuthenticated();
-    $response->assertRedirect(route('dashboard', absolute: false));
+    $this->assertGuest();
+    $response->assertRedirect(route('login'));
+    $this->assertDatabaseHas('users', ['email' => 'test@example.com']);
 });

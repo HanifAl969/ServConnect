@@ -1,211 +1,242 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="utf-8"/>
-    <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
-    <title>Jasa Connect - Vendor Dashboard</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Manrope:wght=400;600;700;800&family=Inter:wght=400;500;600;700&display=swap" rel="stylesheet"/>
-    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
-    <style>
-        body { font-family: 'Inter', sans-serif; }
-        h1, h2, h3, .brand-font { font-family: 'Manrope', sans-serif; }
-    </style>
-</head>
-<body class="bg-[#f9f9ff] text-[#151c27]">
+@extends('layouts.vendor')
 
-    <aside class="hidden lg:flex flex-col h-screen border-r border-gray-200 bg-white p-6 gap-8 fixed left-0 w-64 z-50">
-        <div class="flex items-center gap-3 px-2">
-            <div class="w-10 h-10 rounded-lg bg-[#003fb1] flex items-center justify-center">
-                <span class="material-symbols-outlined text-white">token</span>
-            </div>
-            <div>
-                <p class="font-bold text-[#003fb1] leading-tight">ServiceFlow</p>
-                <p class="text-[10px] text-gray-400 uppercase tracking-wider">Vendor Panel</p>
+@section('title', 'Dashboard Vendor — ServeConnect')
+
+@section('header', 'Dashboard Vendor')
+
+@section('content')
+<div class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-4 mb-8">
+    @php
+        $userId = Auth::id();
+        $jasaCount = \App\Models\Jasa::where('user_id', $userId)->count();
+        $pendingBookings = \App\Models\Booking::where('vendor_id', $userId)->where('status', 'pending')->count();
+        $acceptedBookings = \App\Models\Booking::where('vendor_id', $userId)->where('status', 'accepted')->count();
+        $completedBookings = \App\Models\Booking::where('vendor_id', $userId)->where('status', 'completed')->count();
+        $totalRevenue = \App\Models\Booking::where('vendor_id', $userId)->where('status', 'completed')
+            ->whereHas('payment', fn($q) => $q->where('status', 'success'))
+            ->with('jasa')->get()->sum(fn($b) => $b->jasa->harga);
+        $totalViews = \App\Models\Jasa::where('user_id', $userId)->sum('views');
+    @endphp
+
+    <a href="{{ route('dashboard') }}" class="block bg-white p-5 rounded-2xl border border-gray-100 shadow-sm hover:shadow-md hover:border-blue-200 transition-all group">
+        <div class="flex justify-between items-start mb-3">
+            <div class="p-2.5 bg-blue-50 rounded-xl group-hover:bg-blue-100 transition-colors">
+                <span class="material-symbols-outlined text-[#003fb1]">handyman</span>
             </div>
         </div>
+        <p class="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Jasa Aktif</p>
+        <h3 class="text-xl font-extrabold text-gray-900 mt-1">{{ $jasaCount }}</h3>
+    </a>
 
-        <nav class="flex flex-col gap-1">
-            <a class="flex items-center gap-3 bg-[#e7eefe] text-[#003fb1] rounded-xl px-4 py-3 font-semibold text-sm" href="{{ route('dashboard') }}">
-                <span class="material-symbols-outlined">dashboard</span> Dashboard
-            </a>
-            <a class="flex items-center gap-3 text-gray-500 hover:bg-gray-50 rounded-xl px-4 py-3 text-sm transition-all" href="#">
-                <span class="material-symbols-outlined">calendar_today</span> Bookings
-            </a>
-            <a class="flex items-center gap-3 text-gray-500 hover:bg-gray-50 rounded-xl px-4 py-3 text-sm transition-all" href="#">
-                <span class="material-symbols-outlined">payments</span> Earnings
-            </a>
-            <a class="flex items-center gap-3 text-gray-500 hover:bg-gray-50 rounded-xl px-4 py-3 text-sm transition-all" href="{{ route('profile.edit') }}">
-                <span class="material-symbols-outlined">settings</span> Settings
-            </a>
-        </nav>
-
-        <div class="mt-auto pt-6 border-t border-gray-100">
-            <form method="POST" action="{{ route('logout') }}">
-                @csrf
-                <button type="submit" class="w-full flex items-center gap-3 text-red-500 px-4 py-3 rounded-xl hover:bg-red-50 transition-all font-semibold text-sm">
-                    <span class="material-symbols-outlined">logout</span> Logout
-                </button>
-            </form>
-        </div>
-    </aside>
-
-    <main class="flex-1 lg:ml-64 p-6 lg:p-10">
-
-        <header class="lg:hidden flex justify-between items-center mb-8">
-            <span class="font-bold text-[#003fb1] text-xl">ServiceFlow</span>
-            <div class="w-10 h-10 rounded-full bg-gray-200 overflow-hidden border">
-                <img src="https://ui-avatars.com/api/?name={{ Auth::user()->name }}" alt="Profile">
+    <a href="{{ route('vendor.bookings') }}" class="block bg-white p-5 rounded-2xl border border-gray-100 shadow-sm hover:shadow-md hover:border-orange-200 transition-all group">
+        <div class="flex justify-between items-start mb-3">
+            <div class="p-2.5 bg-orange-50 rounded-xl group-hover:bg-orange-100 transition-colors">
+                <span class="material-symbols-outlined text-orange-600">pending</span>
             </div>
-        </header>
+        </div>
+        <p class="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Booking Masuk</p>
+        <h3 class="text-xl font-extrabold text-gray-900 mt-1">{{ $pendingBookings }}</h3>
+    </a>
 
-        @if(session('success'))
-            <div class="mb-6 p-4 bg-green-50 border border-green-200 text-green-700 rounded-xl flex items-center gap-3 text-sm font-semibold">
+    <a href="{{ route('vendor.bookings') }}" class="block bg-white p-5 rounded-2xl border border-gray-100 shadow-sm hover:shadow-md hover:border-green-200 transition-all group">
+        <div class="flex justify-between items-start mb-3">
+            <div class="p-2.5 bg-green-50 rounded-xl group-hover:bg-green-100 transition-colors">
                 <span class="material-symbols-outlined text-green-600">check_circle</span>
-                {{ session('success') }}
             </div>
-        @endif
+        </div>
+        <p class="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Diterima</p>
+        <h3 class="text-xl font-extrabold text-gray-900 mt-1">{{ $acceptedBookings }}</h3>
+    </a>
 
-        <div class="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-10">
-            <div>
-                <h1 class="text-4xl font-extrabold text-gray-900 tracking-tight">Overview</h1>
-                <p class="text-gray-500 mt-2 font-medium">Welcome back, {{ Auth::user()->name }}! Here's your performance today.</p>
+    <a href="{{ route('vendor.bookings') }}" class="block bg-white p-5 rounded-2xl border border-gray-100 shadow-sm hover:shadow-md hover:border-teal-200 transition-all group">
+        <div class="flex justify-between items-start mb-3">
+            <div class="p-2.5 bg-teal-50 rounded-xl group-hover:bg-teal-100 transition-colors">
+                <span class="material-symbols-outlined text-teal-600">task_alt</span>
             </div>
-            <div class="flex gap-3">
-                <a href="{{ route('vendor.jasa.create') }}" class="px-6 py-3 bg-[#003fb1] text-white rounded-xl font-bold text-sm flex items-center gap-2 shadow-lg shadow-blue-200 hover:opacity-90 transition-all">
-                    <span class="material-symbols-outlined text-[20px]">add</span> Add New Service
+        </div>
+        <p class="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Selesai</p>
+        <h3 class="text-xl font-extrabold text-gray-900 mt-1">{{ $completedBookings }}</h3>
+    </a>
+
+    <a href="{{ route('vendor.bookings') }}" class="block bg-white p-5 rounded-2xl border border-gray-100 shadow-sm hover:shadow-md hover:border-emerald-200 transition-all group">
+        <div class="flex justify-between items-start mb-3">
+            <div class="p-2.5 bg-emerald-50 rounded-xl group-hover:bg-emerald-100 transition-colors">
+                <span class="material-symbols-outlined text-emerald-600">payments</span>
+            </div>
+        </div>
+        <p class="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Pemasukan</p>
+        <h3 class="text-lg font-extrabold text-gray-900 mt-1">Rp {{ number_format($totalRevenue, 0, ',', '.') }}</h3>
+    </a>
+
+    <a href="{{ route('dashboard') }}" class="block bg-white p-5 rounded-2xl border border-gray-100 shadow-sm hover:shadow-md hover:border-violet-200 transition-all group">
+        <div class="flex justify-between items-start mb-3">
+            <div class="p-2.5 bg-violet-50 rounded-xl group-hover:bg-violet-100 transition-colors">
+                <span class="material-symbols-outlined text-violet-600">visibility</span>
+            </div>
+        </div>
+        <p class="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Dilihat</p>
+        <h3 class="text-xl font-extrabold text-gray-900 mt-1">{{ number_format($totalViews) }}</h3>
+    </a>
+</div>
+
+<div class="grid grid-cols-1 xl:grid-cols-3 gap-8">
+    <div class="xl:col-span-2 bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+        <div class="p-6 border-b border-gray-50 flex justify-between items-center bg-gray-50/50">
+            <div>
+                <h2 class="text-xl font-bold text-gray-900">Jasa Saya</h2>
+                <p class="text-xs text-gray-500 font-medium mt-1">Kelola layanan jasa yang Anda tawarkan</p>
+            </div>
+            <a href="{{ route('vendor.jasa.create') }}" class="px-4 py-2 bg-[#003fb1] text-white rounded-xl text-xs font-bold shadow-lg shadow-blue-100 hover:opacity-90 transition-all flex items-center gap-2">
+                <span class="material-symbols-outlined text-[16px]">add</span>
+                Tambah Jasa
+            </a>
+        </div>
+        <div class="overflow-x-auto">
+            <table class="w-full text-left">
+                <thead class="bg-white border-b border-gray-50 text-[11px] uppercase text-gray-400 font-bold tracking-widest">
+                    <tr>
+                        <th class="px-6 py-4">Jasa</th>
+                        <th class="px-6 py-4">Kategori</th>
+                        <th class="px-6 py-4">Harga</th>
+                        <th class="px-6 py-4">Pendapatan</th>
+                        <th class="px-6 py-4">Dilihat</th>
+                        <th class="px-6 py-4">Aksi</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-50">
+                    @forelse($jasas as $jasa)
+                    <tr class="hover:bg-gray-50/50 transition-colors">
+                        <td class="px-6 py-4">
+                            <div class="flex items-center gap-3">
+                                <div class="w-12 h-12 rounded-xl bg-gray-100 overflow-hidden border border-gray-200 flex-shrink-0">
+                                    @php $firstImg = is_array($jasa->gambar) ? ($jasa->gambar[0] ?? null) : $jasa->gambar; @endphp
+                                    <img src="{{ $firstImg ? asset('storage/jasa/' . $firstImg) : 'https://ui-avatars.com/api/?name=' . urlencode($jasa->nama_jasa) . '&background=003fb1&color=fff' }}"
+                                         class="w-full h-full object-cover"
+                                         alt="{{ $jasa->nama_jasa }}"
+                                         onerror="this.onerror=null; this.src='https://ui-avatars.com/api/?name={{ urlencode($jasa->nama_jasa) }}&background=003fb1&color=fff';">
+                                </div>
+                                <div>
+                                    <p class="text-sm font-bold text-gray-900">{{ $jasa->nama_jasa }}</p>
+                                    <p class="text-[11px] text-gray-400 line-clamp-1">{{ $jasa->deskripsi }}</p>
+                                </div>
+                            </div>
+                        </td>
+                        <td class="px-6 py-4">
+                            <span class="px-2 py-1 rounded-md text-[10px] font-bold uppercase bg-blue-50 text-blue-600">
+                                {{ $jasa->kategori ?? 'Service' }}
+                            </span>
+                        </td>
+                        <td class="px-6 py-4 text-sm font-bold text-gray-900">Rp {{ number_format($jasa->harga, 0, ',', '.') }}</td>
+                        <td class="px-6 py-4 text-sm font-bold text-green-600">Rp {{ number_format(($jasa->completed_count ?? 0) * $jasa->harga, 0, ',', '.') }}</td>
+                        <td class="px-6 py-4 text-sm text-gray-500">{{ number_format($jasa->views ?? 0) }}</td>
+                        <td class="px-6 py-4">
+                            <a href="{{ route('vendor.jasa.edit', $jasa) }}" class="text-[#003fb1] text-xs font-bold hover:underline">Edit</a>
+                        </td>
+                    </tr>
+                    @empty
+                    <tr>
+                        <td colspan="6" class="px-6 py-16 text-center">
+                            <span class="material-symbols-outlined text-gray-200 text-5xl mb-4 block">inventory_2</span>
+                            <p class="text-gray-400 font-medium">Belum ada jasa yang ditawarkan.</p>
+                            <a href="{{ route('vendor.jasa.create') }}" class="mt-3 inline-block px-4 py-2 bg-[#003fb1] text-white rounded-xl text-xs font-bold">Tambah Jasa Sekarang</a>
+                        </td>
+                    </tr>
+                    @endforelse
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <div class="space-y-6">
+        <div class="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm">
+            <h2 class="text-xl font-bold text-gray-900 mb-6">Aksi Cepat</h2>
+            <div class="space-y-3">
+                <a href="{{ route('vendor.jasa.create') }}" class="flex items-center gap-4 p-4 bg-gray-50 border border-gray-100 rounded-xl hover:border-[#003fb1] hover:bg-[#e7eefe] transition-all group">
+                    <div class="w-10 h-10 bg-[#003fb1] text-white rounded-lg flex items-center justify-center group-hover:scale-110 transition-transform">
+                        <span class="material-symbols-outlined">add_circle</span>
+                    </div>
+                    <div>
+                        <p class="font-bold text-sm text-gray-900">Tambah Jasa Baru</p>
+                        <p class="text-[11px] text-gray-400">Posting layanan jasa terbaru</p>
+                    </div>
+                </a>
+                <a href="{{ route('vendor.bookings') }}" class="flex items-center gap-4 p-4 bg-gray-50 border border-gray-100 rounded-xl hover:border-[#003fb1] hover:bg-[#e7eefe] transition-all group">
+                    <div class="w-10 h-10 bg-orange-500 text-white rounded-lg flex items-center justify-center group-hover:scale-110 transition-transform">
+                        <span class="material-symbols-outlined">receipt_long</span>
+                    </div>
+                    <div>
+                        <p class="font-bold text-sm text-gray-900">Lihat Booking Masuk</p>
+                        <p class="text-[11px] text-gray-400">{{ $pendingBookings }} menunggu konfirmasi</p>
+                    </div>
                 </a>
             </div>
         </div>
 
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-10">
+        @php
+            $userKategori = \App\Models\Jasa::where('user_id', Auth::id())->first()?->kategori;
+            $talentVendors = $userKategori
+                ? \App\Models\User::where('role', 'vendor')->where('status', 'active')->where('id', '!=', Auth::id())
+                    ->whereHas('jasas', fn($q) => $q->where('kategori', $userKategori))
+                    ->withCount([
+                        'jasas' => fn($q) => $q->where('kategori', $userKategori),
+                        'vendorBookings as bookings_accepted_count' => fn($q) => $q->whereIn('status', ['accepted', 'completed']),
+                    ])
+                    ->get()
+                : collect();
+        @endphp
+        @if($talentVendors->isNotEmpty())
             <div class="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm">
-                <div class="flex items-center justify-between mb-4">
-                    <div class="w-12 h-12 bg-green-50 text-green-600 rounded-xl flex items-center justify-center">
-                        <span class="material-symbols-outlined">payments</span>
-                    </div>
-                    <span class="text-green-600 text-xs font-bold bg-green-100 px-2 py-1 rounded-full">+12%</span>
-                </div>
-                <p class="text-xs font-bold text-gray-400 uppercase tracking-wider">Total Earnings</p>
-                <h3 class="text-2xl font-bold text-gray-900 mt-1">Rp 0</h3>
-            </div>
-
-            <div class="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm">
-                <div class="flex items-center justify-between mb-4">
-                    <div class="w-12 h-12 bg-blue-50 text-blue-600 rounded-xl flex items-center justify-center">
-                        <span class="material-symbols-outlined">handyman</span>
-                    </div>
-                    <span class="text-blue-600 text-xs font-bold bg-blue-100 px-2 py-1 rounded-full">Active</span>
-                </div>
-                <p class="text-xs font-bold text-gray-400 uppercase tracking-wider">Active Services</p>
-                <h3 class="text-2xl font-bold text-gray-900 mt-1">{{ $jasas->count() }} Jasa</h3>
-            </div>
-
-            <div class="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm">
-                <div class="flex items-center justify-between mb-4">
-                    <div class="w-12 h-12 bg-orange-50 text-orange-600 rounded-xl flex items-center justify-center">
-                        <span class="material-symbols-outlined">visibility</span>
-                    </div>
-                    <span class="text-orange-600 text-xs font-bold bg-orange-100 px-2 py-1 rounded-full">High</span>
-                </div>
-                <p class="text-xs font-bold text-gray-400 uppercase tracking-wider">Profile Views</p>
-                <h3 class="text-2xl font-bold text-gray-900 mt-1">1,204</h3>
-            </div>
-
-            <div class="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm">
-                <div class="flex items-center justify-between mb-4">
-                    <div class="w-12 h-12 bg-purple-50 text-purple-600 rounded-xl flex items-center justify-center">
-                        <span class="material-symbols-outlined">star</span>
-                    </div>
-                    <span class="text-purple-600 text-xs font-bold bg-purple-100 px-2 py-1 rounded-full">Top 5%</span>
-                </div>
-                <p class="text-xs font-bold text-gray-400 uppercase tracking-wider">Average Rating</p>
-                <h3 class="text-2xl font-bold text-gray-900 mt-1">4.9/5.0</h3>
-            </div>
-        </div>
-
-        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            <div class="lg:col-span-2 bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
-                <div class="px-6 py-5 border-b border-gray-50 flex justify-between items-center">
-                    <h2 class="text-xl font-bold text-gray-900">Your Services</h2>
-                    <a href="#" class="text-[#003fb1] text-sm font-bold hover:underline">View All</a>
-                </div>
-
-                <div class="divide-y divide-gray-50">
-                    @forelse($jasas as $jasa)
-                    <div class="p-6 flex flex-col md:flex-row md:items-center justify-between gap-4 hover:bg-gray-50 transition-all">
-                        <div class="flex items-center gap-4">
-                            <div class="w-14 h-14 rounded-xl bg-gray-100 overflow-hidden border border-gray-200 shadow-sm flex items-center justify-center flex-shrink-0">
-                                <img src="{{ asset('storage/jasa/' . $jasa->gambar) }}" 
-                                     class="w-full h-full object-cover" 
-                                     alt="{{ $jasa->nama_jasa }}"
-                                     onerror="this.onerror=null; this.src='https://ui-avatars.com/api/?name={{ urlencode($jasa->nama_jasa) }}&background=003fb1&color=fff';">
+                <h2 class="text-xl font-bold text-gray-900 mb-4">Talent di {{ $userKategori }}</h2>
+                <p class="text-xs text-gray-500 mb-4">Vendor lain yang menyediakan jasa serupa.</p>
+                <div class="space-y-4">
+                    @foreach($talentVendors as $tv)
+                        @php $tvAccepted = $tv->bookings_accepted_count ?? 0; @endphp
+                        <a href="{{ route('jasa.show', \App\Models\Jasa::where('user_id', $tv->id)->where('kategori', $userKategori)->first()) }}"
+                           class="flex items-center gap-3 p-3 bg-gray-50 rounded-xl border border-gray-100 hover:border-[#003fb1] hover:bg-blue-50/30 transition-all">
+                            <img class="w-10 h-10 rounded-full object-cover border border-white shrink-0"
+                                 src="https://i.pravatar.cc/200?u={{ $tv->email }}"
+                                 alt="{{ $tv->name }}">
+                            <div class="min-w-0 flex-1">
+                                <p class="text-sm font-bold text-gray-900 truncate">{{ $tv->name }}</p>
+                                <p class="text-[10px] text-gray-400">{{ $tv->jasas_count }} jasa
+                                    @if($tvAccepted > 0) &bull; {{ $tvAccepted }} selesai @endif</p>
                             </div>
-                            <div>
-                                <p class="font-bold text-gray-900">{{ $jasa->nama_jasa }}</p>
-                                <p class="text-xs text-blue-600 font-bold bg-blue-50 px-2 py-[2px] rounded inline-block mt-1">
-                                    Rp {{ number_format($jasa->harga, 0, ',', '.') }}
-                                </p>
-                            </div>
-                        </div>
-                        <div class="flex items-center gap-3">
-                            <button class="px-4 py-2 border border-gray-200 text-gray-600 rounded-xl font-bold text-xs hover:bg-white hover:border-blue-600 transition-all">Edit</button>
-                            <button class="px-4 py-2 bg-gray-50 text-gray-400 rounded-xl font-bold text-xs cursor-not-allowed">Stats</button>
-                        </div>
-                    </div>
-                    @empty
-                    <div class="p-16 text-center">
-                        <span class="material-symbols-outlined text-gray-200 text-6xl mb-4 block">inventory_2</span>
-                        <p class="text-gray-400 font-medium italic">No services listed yet.</p>
-                    </div>
-                    @endforelse
-                </div>
-            </div>
-
-            <div class="space-y-6">
-                <div class="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm">
-                    <h2 class="text-xl font-bold text-gray-900 mb-6 font-display">Quick Actions</h2>
-                    <div class="space-y-3">
-                        <a href="{{ route('vendor.jasa.create') }}" class="flex items-center gap-4 p-4 bg-gray-50 border border-gray-100 rounded-xl hover:border-[#003fb1] hover:bg-[#e7eefe] transition-all group">
-                            <div class="w-10 h-10 bg-[#003fb1] text-white rounded-lg flex items-center justify-center group-hover:scale-110 transition-transform">
-                                <span class="material-symbols-outlined">add_circle</span>
-                            </div>
-                            <div>
-                                <p class="font-bold text-sm text-gray-900">Add Service</p>
-                                <p class="text-[11px] text-gray-400">Post a new job listing</p>
-                            </div>
+                            @if($tv->jasas_count >= 5)
+                                <span class="text-[10px] font-bold text-blue-600 shrink-0">Professional</span>
+                            @elseif($tvAccepted > 10)
+                                <span class="text-[10px] font-bold text-green-600 shrink-0">Populer</span>
+                            @endif
                         </a>
-                    </div>
-                </div>
-
-                <div class="bg-[#003fb1] rounded-2xl p-6 relative overflow-hidden group">
-                    <div class="relative z-10">
-                        <div class="flex items-center gap-2 mb-2">
-                            <span class="material-symbols-outlined text-white" style="font-variation-settings: 'FILL' 1;">verified</span>
-                            <span class="text-[10px] font-bold uppercase tracking-widest text-blue-200">Pro Member</span>
-                        </div>
-                        <h4 class="font-bold text-white text-lg leading-tight mb-4">Unlock premium badges and priority search ranking.</h4>
-                        <button class="px-5 py-2.5 bg-white text-[#003fb1] rounded-xl font-bold text-xs hover:bg-blue-50 transition-all">Upgrade Now</button>
-                    </div>
-                    <span class="material-symbols-outlined absolute -bottom-4 -right-4 text-[120px] opacity-10 text-white group-hover:rotate-12 transition-all">workspace_premium</span>
+                    @endforeach
                 </div>
             </div>
-        </div>
-    </main>
+        @endif
 
-    <nav class="lg:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-gray-100 flex justify-around items-center h-16 z-50 px-4">
-        <a href="{{ route('dashboard') }}" class="flex flex-col items-center text-[#003fb1]">
-            <span class="material-symbols-outlined">dashboard</span>
-            <span class="text-[10px] font-bold">Overview</span>
-        </a>
-        <a href="#" class="flex flex-col items-center text-gray-400">
-            <span class="material-symbols-outlined">calendar_today</span>
-            <span class="text-[10px] font-bold">Bookings</span>
-        </a>
-        <a href="{{ route('profile.edit') }}" class="flex flex-col items-center text-gray-400">
-            <span class="material-symbols-outlined">person</span>
-            <span class="text-[10px] font-bold">Profile</span>
-        </a>
-    </nav>
-</body>
-</html>
+        <div class="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm">
+            <h2 class="text-xl font-bold text-gray-900 mb-6">Notifikasi Terbaru</h2>
+            <div class="space-y-6">
+                @php $notif = auth()->user()->notifications()->latest()->take(3)->get(); @endphp
+                @forelse ($notif as $n)
+                    <div class="flex gap-4">
+                        <div class="w-2 h-2 mt-2 rounded-full bg-blue-600 shrink-0"></div>
+                        <div>
+                            <p class="text-sm font-bold text-gray-900">{{ $n->data['message'] ?? 'Notifikasi' }}</p>
+                            <p class="text-[10px] text-gray-300 font-bold mt-2 uppercase">{{ $n->created_at->diffForHumans() }}</p>
+                        </div>
+                    </div>
+                @empty
+                    <div class="flex gap-4">
+                        <div class="w-2 h-2 mt-2 rounded-full bg-gray-300 shrink-0"></div>
+                        <div>
+                            <p class="text-sm text-gray-500">Belum ada notifikasi.</p>
+                        </div>
+                    </div>
+                @endforelse
+            </div>
+            <a href="{{ route('notifications.index') }}" class="block w-full py-3 bg-gray-50 rounded-xl text-xs font-bold text-gray-500 hover:bg-gray-100 transition-all text-center mt-6">
+                Lihat Semua Notifikasi
+            </a>
+        </div>
+    </div>
+</div>
+@endsection

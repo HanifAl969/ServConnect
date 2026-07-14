@@ -24,9 +24,9 @@ test('health endpoint returns ok status', function () {
 
 test('authenticated user can send message to chatbot', function () {
     Http::fake([
-        'api.openai.com/*' => Http::response([
+        'api.groq.com/*' => Http::response([
             'choices' => [
-                ['message' => ['content' => 'Halo! Ada yang bisa saya bantu?']]
+                ['message' => ['content' => 'Halo! Ada yang bisa saya bantu?']],
             ],
             'usage' => [
                 'prompt_tokens'     => 20,
@@ -48,13 +48,13 @@ test('authenticated user can send message to chatbot', function () {
              ->assertJsonStructure(['success', 'reply', 'usage']);
 });
 
-test('chatbot returns correct reply from openai', function () {
+test('chatbot returns correct reply from gemini', function () {
     $expectedReply = 'Kami punya banyak vendor desain grafis yang siap membantu!';
 
     Http::fake([
-        'api.openai.com/*' => Http::response([
+        'api.groq.com/*' => Http::response([
             'choices' => [
-                ['message' => ['content' => $expectedReply]]
+                ['message' => ['content' => $expectedReply]],
             ],
             'usage' => ['prompt_tokens' => 10, 'completion_tokens' => 15, 'total_tokens' => 25],
         ], 200),
@@ -72,9 +72,9 @@ test('chatbot returns correct reply from openai', function () {
              ]);
 });
 
-test('returns 503 when openai service is unavailable', function () {
+test('returns 503 when gemini service is unavailable', function () {
     Http::fake([
-        'api.openai.com/*' => Http::response([], 500),
+        'api.groq.com/*' => Http::response([], 500),
     ]);
 
     $user = User::factory()->create();
@@ -143,9 +143,9 @@ test('blocks prompt injection attack attempt', function () {
 
 test('html tags are stripped from user input', function () {
     Http::fake([
-        'api.openai.com/*' => Http::response([
+        'api.groq.com/*' => Http::response([
             'choices' => [['message' => ['content' => 'Baik, saya mengerti.']]],
-            'usage'   => ['prompt_tokens' => 10, 'completion_tokens' => 5, 'total_tokens' => 15],
+            'usage' => ['prompt_tokens' => 10, 'completion_tokens' => 5, 'total_tokens' => 15],
         ], 200),
     ]);
 
@@ -162,9 +162,9 @@ test('html tags are stripped from user input', function () {
 
 test('rate limiting blocks requests exceeding limit', function () {
     Http::fake([
-        'api.openai.com/*' => Http::response([
+        'api.groq.com/*' => Http::response([
             'choices' => [['message' => ['content' => 'OK']]],
-            'usage'   => ['prompt_tokens' => 5, 'completion_tokens' => 2, 'total_tokens' => 7],
+            'usage' => ['prompt_tokens' => 5, 'completion_tokens' => 2, 'total_tokens' => 7],
         ], 200),
     ]);
 

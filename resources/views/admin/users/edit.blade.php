@@ -1,45 +1,55 @@
-<x-app-layout>
-    <x-slot name="header">
-        <h2 class="font-semibold text-xl text-gray-800 leading-tight">Edit Akun: {{ $user->name }}</h2>
-    </x-slot>
+@extends('layouts.admin')
 
-    <div class="py-12">
-        <div class="max-w-2xl mx-auto sm:px-6 lg:px-8">
-            <div class="bg-white p-8 rounded-xl shadow-sm border border-gray-200">
-                <form action="{{ route('admin.users.update', $user->id) }}" method="POST" class="space-y-6">
-                    @csrf
-                    @method('PUT')
+@section('title', 'Edit User — ServeConnect')
 
-                    <div>
-                        <x-input-label for="name" :value="__('Nama Lengkap')" />
-                        <x-text-input id="name" name="name" type="text" class="mt-1 block w-full" :value="$user->name" required />
-                    </div>
+@section('header', 'Edit Akun: ' . $user->name)
 
-                    <div>
-                        <x-input-label for="email" :value="__('Email')" />
-                        <x-text-input id="email" name="email" type="email" class="mt-1 block w-full" :value="$user->email" required />
-                    </div>
+@section('content')
+<div class="max-w-2xl mx-auto">
+    <div class="bg-white rounded-2xl border border-gray-100 shadow-sm">
+        <div class="p-8">
+            <form action="{{ route('admin.users.update', $user->id) }}" method="POST" class="space-y-6">
+                @csrf
+                @method('PUT')
 
-                    <div>
-                        <x-input-label for="role" :value="__('Role')" />
-                        <select name="role" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500">
-                            <option value="user" {{ $user->role == 'user' ? 'selected' : '' }}>User</option>
-                            <option value="vendor" {{ $user->role == 'vendor' ? 'selected' : '' }}>Vendor</option>
-                            <option value="admin" {{ $user->role == 'admin' ? 'selected' : '' }}>Admin</option>
-                        </select>
-                    </div>
+                <div>
+                    <label class="text-sm font-bold text-gray-700 block mb-1" for="name">Nama Lengkap</label>
+                    <input id="name" name="name" type="text" value="{{ $user->name }}" required
+                        class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-4 focus:ring-[#003fb1]/10 focus:border-[#003fb1] outline-none transition-all text-sm"/>
+                    @error('name') <p class="text-xs text-red-500 mt-1">{{ $message }}</p> @enderror
+                </div>
 
-                    <div class="p-4 bg-gray-50 rounded-lg border border-dashed">
-                        <x-input-label for="password" :value="__('Ganti Password (Opsional)')" />
-                        <x-text-input id="password" name="password" type="password" class="mt-1 block w-full" placeholder="Isi hanya jika ingin ganti password" />
-                    </div>
+                <div>
+                    <label class="text-sm font-bold text-gray-700 block mb-1" for="email">Email</label>
+                    <input id="email" name="email" type="email" value="{{ $user->email }}" required
+                        class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-4 focus:ring-[#003fb1]/10 focus:border-[#003fb1] outline-none transition-all text-sm"/>
+                    @error('email') <p class="text-xs text-red-500 mt-1">{{ $message }}</p> @enderror
+                </div>
 
-                    <div class="flex items-center justify-end gap-4 pt-4">
-                        <a href="{{ route('admin.users.index') }}" class="text-sm text-gray-600 hover:underline">Batal</a>
-                        <x-primary-button class="bg-blue-600 hover:bg-blue-700">Simpan Perubahan</x-primary-button>
-                    </div>
-                </form>
-            </div>
+                <div>
+                    <label class="text-sm font-bold text-gray-700 block mb-1" for="role">Role</label>
+                    <select name="role"
+                        class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-4 focus:ring-[#003fb1]/10 focus:border-[#003fb1] outline-none transition-all text-sm">
+                        <option value="user" {{ $user->role == 'user' ? 'selected' : '' }}>User</option>
+                        <option value="vendor" {{ $user->role == 'vendor' ? 'selected' : '' }}>Vendor</option>
+                        <option value="admin" {{ $user->role == 'admin' ? 'selected' : '' }}>Admin</option>
+                    </select>
+                </div>
+
+                <div class="p-4 bg-gray-50 rounded-xl border border-dashed border-gray-200">
+                    <label class="text-sm font-bold text-gray-700 block mb-1" for="password">Ganti Password <span class="text-gray-400 font-normal">(Opsional)</span></label>
+                    <input id="password" name="password" type="password"
+                        class="w-full px-4 py-3 bg-white border border-gray-200 rounded-xl focus:ring-4 focus:ring-[#003fb1]/10 focus:border-[#003fb1] outline-none transition-all text-sm" placeholder="Isi hanya jika ingin ganti password"/>
+                </div>
+
+                <div class="flex items-center justify-end gap-4 pt-4 border-t border-gray-100">
+                    <a href="{{ route('admin.users.index') }}" class="text-sm text-gray-600 hover:underline">Batal</a>
+                    <button type="submit" class="px-6 py-3 bg-[#003fb1] text-white rounded-xl text-sm font-bold shadow-lg shadow-blue-100 hover:opacity-90 transition-all">
+                        Simpan Perubahan
+                    </button>
+                </div>
+            </form>
         </div>
     </div>
-</x-app-layout>
+</div>
+@endsection

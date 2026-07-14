@@ -1,72 +1,101 @@
-# ServConn Chatbot API — AGENTS.md
+# ServConn — AGENTS.md
 
-## Setup
-
+## Setup & Dev
 ```bash
-composer install
-cp .env.example .env          # lalu isi OPENAI_API_KEY
-php artisan key:generate
-php artisan migrate --force
-php artisan db:seed
+composer run setup       # install + .env + key + migrate + npm
+composer run dev         # server:8000 + queue + logs + Vite (concurrently)
+php artisan serve --port=8000
 ```
-
-Atau: `composer run setup` (jalanin semua termasuk `npm install && npm run build`)
-
-**.env.example tidak punya OPENAI_API_KEY** — tambahkan manual:
-```
-OPENAI_API_KEY=sk-...
-```
-
-## Menjalankan
-
-```bash
-php artisan serve --port=8000          # server aja
-composer run dev                        # server + queue + logs + Vite via concurrently
-npm run dev                             # Vite/HMR frontend aja
-```
+`storage:link` wajib setelah `migrate —seed` (foto jasa/booking/payment/chat).
 
 ## Testing
+- `composer test` → `config:clear` lalu `php artisan test`
+- Single: `php artisan test tests/Feature/Api/ChatbotApiTest.php`
+- SQLite `:memory:` (phpunit.xml) — aman tanpa MySQL
+- Rate limit test: `RateLimiter::clear()` before loop (flaky)
 
-- Framework: **Pest PHP** (`tests/Feature/*.php`, `tests/Unit/*.php`)
-- `composer test` → `config:clear` dulu baru `php artisan test`
-- Single file: `php artisan test tests/Feature/Api/ChatbotApiTest.php`
-- **`phpunit.xml` override `DB_CONNECTION=mysql`** — lingkungan tanpa MySQL akan gagal. Ganti ke `sqlite` atau `:memory:` secara lokal.
-- Rate limit test bisa flaky: perlu `RateLimiter::clear()` sebelum loop.
+## DB & Migrations
+- SQLite **tidak bisa** `add_column NOT NULL` tanpa default — kolom baru harus `->nullable()`
+- `vendor_type` disimpan sebagai `string`, divalidasi di controller (`umkm`/`enterprise`)
 
-## Arsitektur
+## Architecture
+- Laravel 11, SQLite (dev), Sanctum auth (token never expire)
+- 3 role: `admin | vendor | user` — middleware `role:...` alias di `bootstrap/app.php`
+- `layouts.app` (Breeze default) **tidak dipakai**
+- `@stack('scripts')` hanya ada di `layouts.user` — vendor/admin layout **tidak** punya
 
-- **Laravel 11**, DB: SQLite (dev), Sanctum auth
-- 3 role: `admin` | `vendor` | `user` — dicek via middleware `role:...` (alias di `bootstrap/app.php`)
-- **Chatbot** → `app/Http/Controllers/Api/ChatbotController.php` → OpenAI `gpt-3.5-turbo`
-- **Tidak ada ChatLog model** — setiap chat stateless, history tidak disimpan
-- **System prompt hardcoded** di controller — ubah di `chat()` L62-66
-- **Sanctum token never expire** (`config/sanctum.php` → `'expiration' => null`)
+### Layout per Role
+| Role | Layout | 
+|------|--------|
+| Admin | `layouts.admin` — sidebar, `@section('header')` |
+| Vendor | `layouts.vendor` — sidebar, `@section('header')` |
+| User | `layouts.user` — navbar |
 
-## Endpoints
+Shared views pakai conditional:
+```php
+@extends(Auth::user()->role === 'admin' ? 'layouts.admin' : (Auth::user()->role === 'vendor' ? 'layouts.vendor' : 'layouts.user'))
+```
 
-| Method | URI | Auth |
-|--------|-----|------|
-| GET | `/api/chat/health` | Public |
-| POST | `/api/chat` | Sanctum + throttle:20,1 |
+## Registration & Verification
+- **User**: wajib upload KTP (`ktp_photo`), `status=pending`, redirect + flash
+- **Vendor**: wajib pilih `vendor_type` (`umkm`/`enterprise`) + upload ≥1 sertifikat, `status=pending`
+- **Admin approve**: `/admin/vendor-verification` (vendor) dan `/admin/user-verification` (user KTP)
+- **RoleManager** blokir pending/rejected dari akses role-specific routes
+- **BookingController** cek `Auth::user()->status === 'active'` di create/store
 
-## Known Bugs
+## Jasa
+- `gambar[]` array JSON, min 3 foto JPG/PNG max 5MB
+- `'gambar' => 'array'` cast di model
+- `views` (integer default 0) di-increment tiap `JasaController@show`
+- Tampilkan pertama: `$jasa->gambar[0] ?? null`
 
-- ~~`app/Models/Jasa.php` **missing `gambar` di `$fillable`** — gambar tidak tersimpan saat vendor create jasa. Migration & controller sudah punya kolom `gambar`, tapi model menolaknya.~~ ✅ Fixed
-- `routes/web.php` closure `/dashboard` duplikasi logic dengan `DashboardController::index()`
+## Booking
+- Route `/{jasa}/{vendor?}` → `vendor_id` dari form, **bukan** `$jasa->user_id`
+- Validasi `BookingRequest`: `phone` (regex `^08[0-9]{8,13}$`), `address` (min:10), `photos` (required array min:3), `booking_date` (after_or_equal:today), `preferred_time` (in:pagi,siang,sore), `notes` (max:500)
+- Foto di `storage/app/public/bookings/`, path JSON di kolom `photos`
 
-## Security (existing, jangan dihapus)
+## Chat
+- Tabel `chat_messages`: `booking_id`, `sender_id`, `message` (nullable), `photo` (nullable)
+- Aktif untuk `accepted` / `completed` / `cancelled` (read-only)
+- Guard: hanya `user_id` atau `vendor_id` yang punya booking
+- Frontend polling 3 detik via `setInterval`, kirim text + foto, auto-scroll
+- Foto di `storage/app/public/chat/`
 
-- Input: `strip_tags()` + `max:1000` + regex injection detection
-- Output: `htmlspecialchars()` on reply
-- Rate limit: 20/min/user (`throttle:20,1`)
-- API key via `config('services.openai.key')` — jangan hardcode
-- Logging tanpa data sensitif
-- Prompt injection test via `ReflectionMethod` akses private method
+## Payment (Transfer Manual)
+1. User upload bukti → `POST /payment` → status=`pending`, booking tetap `accepted`
+2. Vendor konfirmasi → `POST /vendor/bookings/{booking}/confirm-payment` → payment=`success`, booking=`completed`
+3. Norek dari `config/payment.php` (env: `BANK_NAME`, `BANK_ACCOUNT`, `BANK_HOLDER`)
+4. Bukti di `storage/app/public/payments/`
 
-## Akun Seeder
+## Agent Cards (jasa/show)
+- Grid semua vendor di kategori sama, tiap card: 2 jasa (truncate + `line-clamp-2`)
+- Badges: **Perusahaan Terpercaya** (enterprise, hijau+verified), **UMKM** (biru), **Professional** (jasas≥5), **Populer** (accepted+completed >10)
+- Foto: `i.pravatar.cc/200?u={email}`
 
-| Email | Password | Role |
-|-------|----------|------|
-| admin@gmail.com | password | admin |
-| vendor@gmail.com | password | vendor |
-| user@gmail.com | password | user |
+## Vendor Dashboard
+- 6 stat cards: Jasa Aktif, Booking Masuk (pending), Diterima (accepted), Selesai (completed), Pemasukan (completed+payment success revenue), Dilihat (sum views)
+- Tabel Jasa Saya: kolom Harga, Pendapatan (`completed_count × harga`), Dilihat (`$jasa->views`)
+
+## Rupiah Format
+`Rp {{ number_format($harga, 0, ',', '.') }}`
+
+## Known Bug
+- `routes/web.php` closure `/dashboard` duplikasi logic dengan `JasaController::index()`
+
+## API Chatbot (jangan dihapus)
+- `POST /api/chat` — input `strip_tags()` + `max:1000` + regex injection detection
+- Output: `htmlspecialchars()`; API key via `config('services.openai.key')`
+- Rate limit: 20 req/menit/user (`throttle:20,1`)
+- Prompt injection test akses private method via `ReflectionMethod`
+
+## Akun Seeder (password: `password`)
+| Email | Role | Vendor Type |
+|-------|------|-------------|
+| admin@gmail.com | admin | - |
+| user@gmail.com | user | - (status=active, seeded KTP) |
+| vendor@gmail.com | vendor | UMKM |
+| bersih@gmail.com | vendor | Enterprise |
+| bersih@gmail.com | vendor | Enterprise |
+| teknisi@gmail.com | vendor | Enterprise |
+| kreatif@gmail.com | vendor | Enterprise |
+| konsultan@gmail.com | vendor | Enterprise |

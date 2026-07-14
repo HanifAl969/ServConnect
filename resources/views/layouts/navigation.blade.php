@@ -18,8 +18,44 @@
                 </div>
             </div>
 
+            <!-- Notifications -->
+            <div class="hidden sm:flex sm:items-center sm:ms-6 relative">
+                <x-dropdown align="right" width="64">
+                    <x-slot name="trigger">
+                        <button class="relative inline-flex items-center px-3 py-2 text-sm leading-4 font-medium rounded-md text-gray-500 dark:text-gray-400 bg-white dark:bg-gray-800 hover:text-gray-700 dark:hover:text-gray-300 focus:outline-none transition ease-in-out duration-150">
+                            <svg class="h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M14.857 17.082a23.848 23.848 0 005.454-1.31A8.967 8.967 0 0118 9.75v-.7V9A6 6 0 006 9v.75a8.967 8.967 0 01-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 01-5.714 0m5.714 0a3 3 0 11-5.714 0" />
+                            </svg>
+                            @php $unreadCount = Auth::user()->unreadNotifications->count(); @endphp
+                            @if ($unreadCount > 0)
+                                <span class="absolute -top-1 -right-1 inline-flex items-center justify-center w-5 h-5 text-xs font-bold text-white bg-red-500 rounded-full">{{ $unreadCount > 9 ? '9+' : $unreadCount }}</span>
+                            @endif
+                        </button>
+                    </x-slot>
+
+                    <x-slot name="content">
+                        @php $notifications = Auth::user()->notifications()->latest()->take(5)->get(); @endphp
+                        @if ($notifications->isEmpty())
+                            <div class="px-4 py-3 text-sm text-gray-500 text-center">Tidak ada notifikasi</div>
+                        @else
+                            <div class="max-h-64 overflow-y-auto">
+                                @foreach ($notifications as $notification)
+                                    <div class="px-4 py-3 border-b border-gray-100 last:border-0 {{ $notification->read_at ? '' : 'bg-blue-50' }}">
+                                        <p class="text-sm text-gray-700">{{ $notification->data['message'] ?? '' }}</p>
+                                        <p class="text-xs text-gray-400 mt-1">{{ $notification->created_at->diffForHumans() }}</p>
+                                    </div>
+                                @endforeach
+                            </div>
+                        @endif
+                        <div class="border-t border-gray-100">
+                            <a href="{{ route('notifications.index') }}" class="block px-4 py-2 text-sm text-blue-700 font-semibold hover:bg-gray-50 text-center">Lihat Semua</a>
+                        </div>
+                    </x-slot>
+                </x-dropdown>
+            </div>
+
             <!-- Settings Dropdown -->
-            <div class="hidden sm:flex sm:items-center sm:ms-6">
+            <div class="hidden sm:flex sm:items-center sm:ms-2">
                 <x-dropdown align="right" width="48">
                     <x-slot name="trigger">
                         <button class="inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-gray-500 dark:text-gray-400 bg-white dark:bg-gray-800 hover:text-gray-700 dark:hover:text-gray-300 focus:outline-none transition ease-in-out duration-150">

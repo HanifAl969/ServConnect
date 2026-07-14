@@ -54,7 +54,7 @@
             <p class="text-gray-500">Set up your profile to start exploring services.</p>
         </div>
 
-        <form method="POST" action="{{ route('register') }}" class="space-y-6">
+        <form method="POST" action="{{ route('register') }}" class="space-y-6" enctype="multipart/form-data">
             @csrf
 
             <div class="space-y-2">
@@ -96,6 +96,87 @@
                 </div>
             </div>
 
+            <div class="space-y-2">
+                <label class="text-sm font-bold text-gray-700 ml-1">Daftar Sebagai</label>
+                <div class="grid grid-cols-2 gap-3">
+                    <label class="flex items-center gap-3 p-4 border border-gray-200 rounded-xl cursor-pointer hover:border-[#003fb1] transition-all has-[:checked]:bg-blue-50 has-[:checked]:border-[#003fb1]">
+                        <input type="radio" name="role" value="user" checked class="text-[#003fb1] focus:ring-[#003fb1]">
+                        <div>
+                            <span class="font-semibold text-sm">User</span>
+                            <p class="text-xs text-gray-400">Cari jasa</p>
+                        </div>
+                    </label>
+                    <label class="flex items-center gap-3 p-4 border border-gray-200 rounded-xl cursor-pointer hover:border-[#003fb1] transition-all has-[:checked]:bg-blue-50 has-[:checked]:border-[#003fb1]">
+                        <input type="radio" name="role" value="vendor" class="text-[#003fb1] focus:ring-[#003fb1]">
+                        <div>
+                            <span class="font-semibold text-sm">Vendor</span>
+                            <p class="text-xs text-gray-400">Tawarkan jasa</p>
+                        </div>
+                    </label>
+                </div>
+            </div>
+
+            {{-- KTP Upload (User) --}}
+            <div id="ktp-section" class="space-y-2">
+                <label class="text-sm font-bold text-gray-700 ml-1">Foto KTP</label>
+                <p class="text-xs text-gray-400 ml-1 mb-2">Lampirkan foto KTP Anda untuk verifikasi identitas.</p>
+                <div class="relative group">
+                    <span class="absolute left-4 top-1/2 -translate-y-1/2 material-symbols-outlined text-gray-400 group-focus-within:text-[#003fb1] transition-colors">badge</span>
+                    <input name="ktp_photo" id="ktp_photo" type="file" accept="image/jpg,image/jpeg,image/png"
+                           class="w-full pl-12 pr-4 py-3.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-4 focus:ring-[#003fb1]/10 focus:border-[#003fb1] outline-none transition-all text-sm file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-[#003fb1] file:text-white hover:file:bg-blue-700"/>
+                </div>
+                <div id="ktp-preview" class="hidden mt-2">
+                    <img id="ktp-preview-img" class="max-h-40 rounded-lg border border-gray-200" />
+                </div>
+                @error('ktp_photo') <p class="text-xs text-red-500 mt-1">{{ $message }}</p> @enderror
+            </div>
+
+            {{-- Vendor Type + Certificates (Vendor) --}}
+            <div id="vendor-section" class="space-y-6 hidden">
+
+                <div class="space-y-2">
+                    <label class="text-sm font-bold text-gray-700 ml-1">Tipe Vendor</label>
+                    <p class="text-xs text-gray-400 ml-1 mb-2">Pilih tipe vendor Anda.</p>
+                    <div class="grid grid-cols-2 gap-3">
+                        <label class="flex items-center gap-3 p-4 border border-gray-200 rounded-xl cursor-pointer hover:border-[#003fb1] transition-all has-[:checked]:bg-blue-50 has-[:checked]:border-[#003fb1]">
+                            <input type="radio" name="vendor_type" value="umkm" class="text-[#003fb1] focus:ring-[#003fb1]">
+                            <div>
+                                <span class="font-semibold text-sm">UMKM</span>
+                                <p class="text-xs text-gray-400">Usaha kecil/menengah</p>
+                            </div>
+                        </label>
+                        <label class="flex items-center gap-3 p-4 border border-gray-200 rounded-xl cursor-pointer hover:border-[#003fb1] transition-all has-[:checked]:bg-blue-50 has-[:checked]:border-[#003fb1]">
+                            <input type="radio" name="vendor_type" value="enterprise" class="text-[#003fb1] focus:ring-[#003fb1]">
+                            <div>
+                                <span class="font-semibold text-sm">Perusahaan</span>
+                                <p class="text-xs text-gray-400">Bersertifikat resmi</p>
+                            </div>
+                        </label>
+                    </div>
+                    @error('vendor_type') <p class="text-xs text-red-500 mt-1">{{ $message }}</p> @enderror
+                </div>
+
+                <div class="space-y-2">
+                    <label class="text-sm font-bold text-gray-700 ml-1">Sertifikat Kompetensi</label>
+                    <p class="text-xs text-gray-400 ml-1 mb-2">Lampirkan sertifikat kompetensi (BNSP, dll). Minimal 1.</p>
+                    <div id="certificates-container" class="space-y-3">
+                        <div class="certificate-item relative group">
+                            <span class="absolute left-4 top-1/2 -translate-y-1/2 material-symbols-outlined text-gray-400 group-focus-within:text-[#003fb1] transition-colors">assignment</span>
+                            <input type="file" name="certificates[]" accept="image/jpg,image/jpeg,image/png"
+                                   class="w-full pl-12 pr-4 py-3.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-4 focus:ring-[#003fb1]/10 focus:border-[#003fb1] outline-none transition-all text-sm file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-[#003fb1] file:text-white hover:file:bg-blue-700"/>
+                        </div>
+                    </div>
+                    <button type="button" id="add-certificate-btn"
+                            class="mt-2 text-sm text-[#003fb1] font-semibold hover:text-blue-700 transition-colors flex items-center gap-1">
+                        <span class="material-symbols-outlined text-[18px]">add_circle</span>
+                        Tambah Sertifikat
+                    </button>
+                    <div id="certificates-preview" class="grid grid-cols-3 gap-2 mt-2"></div>
+                    @error('certificates') <p class="text-xs text-red-500 mt-1">{{ $message }}</p> @enderror
+                    @error('certificates.*') <p class="text-xs text-red-500 mt-1">{{ $message }}</p> @enderror
+                </div>
+            </div>
+
             <button type="submit" class="w-full py-4 bg-[#003fb1] text-white rounded-xl font-bold text-lg shadow-lg shadow-blue-100 active:scale-[0.98] transition-all hover:bg-blue-700">
                 Create Account
             </button>
@@ -119,5 +200,81 @@
         </footer>
     </div>
 </main>
+<script>
+(function() {
+    const roleRadios = document.querySelectorAll('input[name="role"]');
+    const ktpSection = document.getElementById('ktp-section');
+    const vendorSection = document.getElementById('vendor-section');
+    const ktpInput = document.getElementById('ktp_photo');
+    const ktpPreview = document.getElementById('ktp-preview');
+    const ktpPreviewImg = document.getElementById('ktp-preview-img');
+    const container = document.getElementById('certificates-container');
+    const addBtn = document.getElementById('add-certificate-btn');
+    const certsPreview = document.getElementById('certificates-preview');
+
+    function toggleSections(role) {
+        ktpSection.classList.toggle('hidden', role !== 'user');
+        vendorSection.classList.toggle('hidden', role !== 'vendor');
+        if (role === 'user') {
+            document.querySelectorAll('[name="vendor_type"]').forEach(r => r.checked = false);
+        }
+    }
+
+    roleRadios.forEach(r => r.addEventListener('change', function() {
+        toggleSections(this.value);
+    }));
+    toggleSections(document.querySelector('input[name="role"]:checked')?.value || 'user');
+
+    ktpInput.addEventListener('change', function() {
+        if (this.files && this.files[0]) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                ktpPreview.classList.remove('hidden');
+                ktpPreviewImg.src = e.target.result;
+            };
+            reader.readAsDataURL(this.files[0]);
+        }
+    });
+
+    let certIndex = 1;
+
+    addBtn.addEventListener('click', function() {
+        const div = document.createElement('div');
+        div.className = 'certificate-item relative group';
+        div.innerHTML =
+            '<span class="absolute left-4 top-1/2 -translate-y-1/2 material-symbols-outlined text-gray-400 group-focus-within:text-[#003fb1] transition-colors">assignment</span>' +
+            '<input type="file" name="certificates[]" accept="image/jpg,image/jpeg,image/png" class="w-full pl-12 pr-4 py-3.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-4 focus:ring-[#003fb1]/10 focus:border-[#003fb1] outline-none transition-all text-sm file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-[#003fb1] file:text-white hover:file:bg-blue-700"/>';
+        container.appendChild(div);
+        certIndex++;
+
+        div.querySelector('input').addEventListener('change', function() {
+            previewCertificate(this);
+        });
+    });
+
+    document.querySelectorAll('input[name="certificates[]"]').forEach(function(input) {
+        input.addEventListener('change', function() {
+            previewCertificate(this);
+        });
+    });
+
+    function previewCertificate(input) {
+        if (input.files && input.files[0]) {
+            const reader = new FileReader();
+            const idx = Array.from(container.querySelectorAll('input')).indexOf(input);
+            reader.onload = function(e) {
+                let img = certsPreview.querySelectorAll('img')[idx];
+                if (!img) {
+                    img = document.createElement('img');
+                    img.className = 'h-20 w-20 object-cover rounded-lg border border-gray-200';
+                    certsPreview.appendChild(img);
+                }
+                img.src = e.target.result;
+            };
+            reader.readAsDataURL(input.files[0]);
+        }
+    }
+})();
+</script>
 </body>
 </html>

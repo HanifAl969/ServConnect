@@ -4,25 +4,88 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\User;
+use App\Notifications\AccountVerified;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 
 class UserController extends Controller
 {
-    // Tampilkan daftar semua user
+    public function vendorVerification()
+    {
+        $vendors = User::where('role', 'vendor')
+            ->with('certificates')
+            ->latest()
+            ->paginate(10);
+        return view('admin.users.vendor-verification', compact('vendors'));
+    }
+
+    public function approveVendor(User $user)
+    {
+        if ($user->role !== 'vendor') {
+            return back()->with('error', 'User bukan vendor.');
+        }
+
+        $user->update(['status' => 'active']);
+        $user->notify(new AccountVerified("Selamat! Akun vendor Anda telah disetujui. Anda sekarang dapat menawarkan jasa di ServeConnect."));
+
+        return redirect()->route('admin.vendor.verification')
+            ->with('success', "Vendor {$user->name} berhasil diverifikasi!");
+    }
+
+    public function rejectVendor(User $user)
+    {
+        if ($user->role !== 'vendor') {
+            return back()->with('error', 'User bukan vendor.');
+        }
+
+        $user->update(['status' => 'rejected']);
+
+        return redirect()->route('admin.vendor.verification')
+            ->with('success', "Vendor {$user->name} ditolak.");
+    }
+
+    public function userVerification()
+    {
+        $users = User::where('role', 'user')->latest()->paginate(10);
+        return view('admin.users.user-verification', compact('users'));
+    }
+
+    public function approveUser(User $user)
+    {
+        if ($user->role !== 'user') {
+            return back()->with('error', 'User bukan role user.');
+        }
+
+        $user->update(['status' => 'active']);
+        $user->notify(new AccountVerified("Selamat! KTP Anda telah diverifikasi. Anda sekarang dapat memesan jasa di ServeConnect."));
+
+        return redirect()->route('admin.user.verification')
+            ->with('success', "User {$user->name} berhasil diverifikasi!");
+    }
+
+    public function rejectUser(User $user)
+    {
+        if ($user->role !== 'user') {
+            return back()->with('error', 'User bukan role user.');
+        }
+
+        $user->update(['status' => 'rejected']);
+
+        return redirect()->route('admin.user.verification')
+            ->with('success', "User {$user->name} ditolak.");
+    }
+
     public function index()
     {
         $users = User::latest()->paginate(10);
         return view('admin.users.index', compact('users'));
     }
 
-    // Form tambah user baru
     public function create()
     {
         return view('admin.users.create');
     }
 
-    // Simpan user baru
     public function store(Request $request)
     {
         $request->validate([
@@ -42,13 +105,11 @@ class UserController extends Controller
         return redirect()->route('admin.users.index')->with('success', 'User berhasil ditambahkan!');
     }
 
-    // Form Edit User
     public function edit(User $user)
     {
         return view('admin.users.edit', compact('user'));
     }
 
-    // Proses Update Data
     public function update(Request $request, User $user)
     {
         $request->validate([
@@ -63,7 +124,6 @@ class UserController extends Controller
             'role' => $request->role,
         ]);
 
-        // Update password cuma kalau diisi
         if ($request->filled('password')) {
             $user->update(['password' => Hash::make($request->password)]);
         }
@@ -71,10 +131,8 @@ class UserController extends Controller
         return redirect()->route('admin.users.index')->with('success', 'User berhasil diupdate!');
     }
 
-    // Proses Hapus User
     public function destroy(User $user)
     {
-        // Safety: Admin nggak bisa hapus diri sendiri
         if ($user->id === auth()->id()) {
             return back()->with('error', 'Nggak bisa hapus akun sendiri, Bang!');
         }

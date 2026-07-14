@@ -8,20 +8,33 @@ use Symfony\Component\HttpFoundation\Response;
 
 class RoleManager
 {
-    /**
-     * Handle an incoming request.
-     *
-     * @param  Closure(Request): (Response)  $next
-     */
     public function handle(Request $request, Closure $next, $role)
     {
         if (!auth()->check()) { 
             return redirect()->route('login');
         }
 
-        // Kalau role user tidak sesuai dengan yang diminta router, tendang ke dashboard default
-        if ($request->user()->role !== $role) {
+        $user = $request->user();
+
+        if ($user->role !== $role) {
             return redirect()->route('dashboard');
+        }
+
+        if ($role === 'vendor') {
+            if ($user->status === 'pending') {
+                return redirect()->route('dashboard')
+                    ->with('error', 'Akun vendor Anda masih menunggu verifikasi admin.');
+            }
+
+            if ($user->status === 'rejected') {
+                return redirect()->route('dashboard')
+                    ->with('error', 'Akun vendor Anda ditolak. Hubungi admin.');
+            }
+        }
+
+        if ($role === 'user' && in_array($user->status, ['pending', 'rejected'])) {
+            return redirect()->route('dashboard')
+                ->with('error', 'Akun Anda masih menunggu verifikasi KTP oleh admin.');
         }
 
         return $next($request);

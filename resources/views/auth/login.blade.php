@@ -51,6 +51,12 @@
                 <p class="text-gray-500 mt-2">Welcome back! Please enter your details.</p>
             </header>
 
+            @if (session('success'))
+                <div class="mb-4 font-medium text-sm text-green-600 bg-green-50 p-4 rounded-xl border border-green-100">
+                    {{ session('success') }}
+                </div>
+            @endif
+
             @if (session('status'))
                 <div class="mb-4 font-medium text-sm text-green-600 bg-green-50 p-4 rounded-xl border border-green-100">
                     {{ session('status') }}

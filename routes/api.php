@@ -17,7 +17,11 @@ use Illuminate\Support\Facades\Route;
 // Health check - public (tidak perlu login)
 Route::get('/chat/health', [ChatbotController::class, 'health']);
 
-// Chatbot endpoint - protected
+// Chatbot public - tanpa auth, rate limit 10 req/menit per IP
+Route::post('/chat/public', [ChatbotController::class, 'chatPublic'])
+    ->middleware('throttle:10,1');
+
+// Chatbot endpoint - protected (login required)
 Route::middleware(['auth:sanctum', 'throttle:20,1'])->group(function () {
     Route::post('/chat', [ChatbotController::class, 'chat']);
 });

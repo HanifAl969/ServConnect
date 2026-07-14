@@ -19,11 +19,20 @@ class Jasa extends Model
         'gambar',
     ];
 
-    /**
-     * Relasi ke User (Penyedia Jasa)
-     */
+    protected function casts(): array
+    {
+        return [
+            'gambar' => 'array',
+        ];
+    }
+
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
+    }
+
+    public function bookings(): \Illuminate\Database\Eloquent\Relations\HasMany
+    {
+        return $this->hasMany(Booking::class);
     }
 }

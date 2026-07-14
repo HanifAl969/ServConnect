@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use App\Models\Jasa;
@@ -23,7 +24,8 @@ class DashboardController extends Controller
 
         // Arahkan sesuai role
         if ($role === 'admin') {
-            return view('admin.dashboard'); // Admin ke Panel Admin (US3)
+            $users = User::latest()->paginate(5);
+            return view('admin.dashboard', compact('users'));
         } 
         
         if ($role === 'vendor') {
