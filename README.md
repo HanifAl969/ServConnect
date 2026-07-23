@@ -85,22 +85,6 @@ class User extends Authenticatable {
 
 ---
 
-## 🔒 Security Engineering (SSE)
-
-| Aspek | Implementasi |
-|-------|-------------|
-| **API Key Protection** | Key disimpan di `.env`, tidak di-hardcode |
-| **Authentication** | Laravel Sanctum token-based auth |
-| **Rate Limiting** | Throttle 20 request/menit per user |
-| **Input Validation** | `required`, `string`, `max:1000` |
-| **Input Sanitization** | `strip_tags()` — cegah XSS |
-| **Prompt Injection** | Regex pattern detection |
-| **Output Sanitization** | `htmlspecialchars()` pada response OpenAI |
-| **Error Handling** | Pesan error generik ke client, detail di log |
-| **Logging** | Aktivitas dicatat tanpa data sensitif |
-
----
-
 ## 🧪 Menjalankan Test
 
 ```bash
@@ -138,13 +122,3 @@ php artisan test --verbose
 - ✅ Pertanyaan Indonesia lolos
 - ✅ Pesan Inggris normal lolos
 
----
-
-## 📋 Mapping CPL
-
-| CPL | Aspek | Implementasi |
-|-----|-------|-------------|
-| **CPL-2** | Requirement Quality | Validasi input sesuai kebutuhan bisnis |
-| **CPL-5** | Security Requirement | Auth, rate limit, sanitasi, injection protection |
-| **CPL-10** | Implementasi | ChatbotController + OpenAI integration |
-| **CPL-13** | Testing | 11 Feature test + 6 Unit test |
